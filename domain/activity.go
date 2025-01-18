@@ -6,11 +6,11 @@ import (
 )
 
 type Activity struct {
-	ActivityID        string       `db:"activity_id"`
-	ActivityType      int          `db:"activity_type"`
-	DoneAt            time.Time    `db:"done_at"`
-	DurationInMinutes int          `db:"duration_in_minutes"`
-	CaloriesBurned    float64      `db:"calories_burned"`
-	CreatedAt         sql.NullTime `db:"created_at"`
-	UpdatedAt         sql.NullTime `db:"updated_at"`
+	ActivityId        string       `db:"activityid"`
+	ActivityType      int          `db:"activitytype"`
+	DoneAt            time.Time    `db:"doneat"`
+	DurationInMinutes int          `db:"durationinminutes"`
+	CaloriesBurned    float64      `db:"caloriesburned"`
+	CreatedAt         sql.NullTime `db:"createdat"`
+	UpdatedAt         sql.NullTime `db:"updatedat"`
 }

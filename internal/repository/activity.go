@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/bayuuat/go-sprint-2/domain"
 	"github.com/bayuuat/go-sprint-2/dto"
@@ -49,5 +50,46 @@ func (d activityRepository) Delete(ctx context.Context, user_id string, id strin
 }
 
 func (d activityRepository) FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter) ([]domain.Activity, error) {
-	return nil, nil
+	query := d.db.From("activities")
+
+	if filter.Limit > 0 {
+		query = query.Limit(uint(filter.Limit))
+	}
+	if filter.Offset > 0 {
+		query = query.Offset(uint(filter.Offset))
+	}
+
+	if filter.ActivityId != "" {
+		query = query.Where(goqu.Ex{"activityid": filter.ActivityId})
+	}
+
+	if filter.ActivityType != "" {
+		query = query.Where(goqu.Ex{"activitytype": filter.ActivityType})
+	}
+
+	if filter.DoneAtFrom != "" {
+		if doneAtFrom, err := time.Parse(time.RFC3339, filter.DoneAtFrom); err == nil {
+			query = query.Where(goqu.C("doneat").Gte(doneAtFrom))
+		}
+	}
+
+	if filter.DoneAtTo != "" {
+		if doneAtTo, err := time.Parse(time.RFC3339, filter.DoneAtTo); err == nil {
+			query = query.Where(goqu.C("doneat").Lte(doneAtTo))
+		}
+	}
+
+	if filter.CaloriesBurnedMin > 0 {
+		query = query.Where(goqu.C("caloriesburned").Gte(filter.CaloriesBurnedMin))
+	}
+
+	if filter.CaloriesBurnedMax > 0 {
+		query = query.Where(goqu.C("caloriesburned").Lte(filter.CaloriesBurnedMax))
+	}
+
+	query = query.Limit(uint(filter.Limit)).Offset(uint(filter.Offset))
+
+	var activities []domain.Activity
+	err := query.ScanStructsContext(ctx, &activities)
+	return activities, err
 }
