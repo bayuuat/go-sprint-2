@@ -104,7 +104,7 @@ func (a authApi) UpdateUser(ctx *fiber.Ctx) error {
 	claims := user.Claims.(jwt.MapClaims)
 	id := claims["id"].(string)
 
-	var req dto.UpdateUserReq
+	var req dto.UpdateUserPreferences
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.SendStatus(http.StatusBadRequest)
 	}

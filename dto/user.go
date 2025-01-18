@@ -10,19 +10,23 @@ type AuthReq struct {
 	Password string `json:"password" validate:"required,min=8,max=32"`
 }
 
-type UserData struct {
-	Id              string  `json:"id"`
-	Email           string  `json:"email"`
-	Name            string  `json:"name"`
-	UserImageUri    *string `json:"userImageUri"`
-	CompanyName     *string `json:"companyName"`
-	CompanyImageUri *string `json:"companyImageUri"`
+type UserPreferences struct {
+	Preference *string `json:"preference"`
+	WeightUnit *string `json:"weightUnit"`
+	HeightUnit *string `json:"heightUnit"`
+	Weight     *int    `json:"weight"`
+	Height     *int    `json:"height"`
+	Email      *string `json:"email"`
+	Name       *string `json:"name"`
+	ImageUri   *string `json:"imageUri"`
 }
 
-type UpdateUserReq struct {
-	Name            *string `json:"name" validate:"required,min=4,max=52"`
-	Email           *string `json:"email" validate:"required,email"`
-	UserImageUri    *string `json:"userImageUri" validate:"required,uri,accessibleuri"`
-	CompanyName     *string `json:"companyName" validate:"required,min=4,max=52"`
-	CompanyImageUri *string `json:"companyImageUri" validate:"required,uri,accessibleuri"`
+type UpdateUserPreferences struct {
+	Preference *string  `json:"preference" validate:"required,oneof=CARDIO WEIGHT"`
+	WeightUnit *string  `json:"weightUnit" validate:"required,oneof=KG LBS"`
+	HeightUnit *string  `json:"heightUnit" validate:"required,oneof=CM INCH"`
+	Weight     *float64 `json:"weight" validate:"required,min=10,max=1000"`
+	Height     *float64 `json:"height" validate:"required,min=3,max=250"`
+	Name       *string  `json:"name" validate:"required,min=2,max=60"`
+	ImageUri   *string  `json:"imageUri" validate:"required,uri,accessibleuri"`
 }
