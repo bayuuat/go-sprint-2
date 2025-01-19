@@ -52,6 +52,30 @@ CREATE TRIGGER set_calories_burned
     FOR EACH ROW
     EXECUTE FUNCTION calculate_calories_burned();
 
+-- Create function to update updated_at
+CREATE OR REPLACE FUNCTION update_modified_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = now();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+
+-- Create trigger in users to update updated_at
+CREATE TRIGGER update_modified_time
+    BEFORE UPDATE
+    ON users
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_modified_column();
+
+-- Create trigger in activities to update updated_at
+CREATE TRIGGER update_modified_time
+    BEFORE UPDATE
+    ON activities
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_modified_column();
+
 -- Insert activity types
 INSERT INTO
   ActivityTypes (name, calories_per_minute)
