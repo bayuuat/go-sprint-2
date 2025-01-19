@@ -19,7 +19,8 @@ func main() {
 	api.NewUser(app, authService)
 
 	departmentRepository := repository.NewActivity(dbConnection)
-	departmentService := service.NewActivity(cnf, departmentRepository)
+	activityTypesRepository := repository.NewActivityType(dbConnection)
+	departmentService := service.NewActivity(cnf, departmentRepository, activityTypesRepository)
 	api.NewActivity(app, departmentService)
 
 	api.NewAws(app)

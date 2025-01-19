@@ -29,7 +29,9 @@ func NewActivity(db *sql.DB) ActivityRepository {
 }
 
 func (d activityRepository) Save(ctx context.Context, activity *domain.Activity) (*domain.Activity, error) {
-	return nil, nil
+	executor := d.db.Insert("activities").Rows(activity).Executor()
+	_, err := executor.ExecContext(ctx)
+	return activity, err
 }
 
 func (d activityRepository) Update(ctx context.Context, activity *domain.Activity) error {
