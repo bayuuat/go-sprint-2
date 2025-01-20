@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"log/slog"
 	"net/http"
 
@@ -109,7 +108,6 @@ func (a userService) Login(ctx context.Context, req dto.AuthReq) (dto.AuthRespon
 }
 
 func (a userService) GetUser(ctx context.Context, email string) (dto.UserPreferences, int, error) {
-	fmt.Print(email)
 	user, err := a.userRepository.FindByEmail(ctx, email)
 	if err != nil {
 		slog.ErrorContext(ctx, err.Error())

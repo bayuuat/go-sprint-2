@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-
 	"github.com/bayuuat/go-sprint-2/domain"
 	"github.com/bayuuat/go-sprint-2/dto"
 	"github.com/doug-martin/goqu/v9"
@@ -11,9 +10,9 @@ import (
 
 type ActivityRepository interface {
 	Save(ctx context.Context, activity *domain.Activity) (*domain.Activity, error)
-	Update(ctx context.Context, activity *domain.Activity) error
+	Update(ctx context.Context, userId string, activity goqu.Record) error
 	FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter) ([]domain.Activity, error)
-	FindById(ctx context.Context, id string, userId string) (domain.Activity, error)
+	FindById(ctx context.Context, userId, id string) (domain.Activity, error)
 	HasEmployees(ctx context.Context, activityId string) (bool, error)
 	Delete(ctx context.Context, user_id string, id string) error
 }
@@ -32,12 +31,19 @@ func (d activityRepository) Save(ctx context.Context, activity *domain.Activity)
 	return nil, nil
 }
 
-func (d activityRepository) Update(ctx context.Context, activity *domain.Activity) error {
-	return nil
+func (d activityRepository) Update(ctx context.Context, userId string, activity goqu.Record) error {
+	executor := d.db.Update("activities").Where(goqu.C("activity_id").Eq(userId)).Set(activity).Executor()
+	_, err := executor.ExecContext(ctx)
+
+	return err
 }
 
-func (d activityRepository) FindById(ctx context.Context, id, userId string) (activity domain.Activity, err error) {
-	return domain.Activity{}, nil
+func (d activityRepository) FindById(ctx context.Context, userId, id string) (activity domain.Activity, err error) {
+	dataset := d.db.From("activities").Where(goqu.Ex{
+		"activity_id": id,
+	})
+	_, err = dataset.ScanStructContext(ctx, &activity)
+	return
 }
 
 func (r *activityRepository) HasEmployees(ctx context.Context, activityId string) (bool, error) {

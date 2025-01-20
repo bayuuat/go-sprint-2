@@ -1,5 +1,5 @@
 -- Create enum types for preferences and units
-CREATE TABLE IF NOT EXISTS public.Users (
+CREATE TABLE IF NOT EXISTS public.users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email character varying(255) NOT NULL,
   password character varying(255) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.Users (
 );
 
 -- Create the activity types table
-CREATE TABLE IF NOT EXISTS public.ActivityTypes (
+CREATE TABLE IF NOT EXISTS public.activity_types (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   calories_per_minute NUMERIC(10, 2) NOT NULL
@@ -24,22 +24,23 @@ CREATE TABLE IF NOT EXISTS public.ActivityTypes (
 -- Create the activities table without the generated column
 CREATE TABLE IF NOT EXISTS public.Activities (
   activityId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  activityType INT NOT NULL REFERENCES ActivityTypes(id),
-  doneAt TIMESTAMP NOT NULL,
-  durationInMinutes INT NOT NULL CHECK (durationInMinutes >= 1),
-  caloriesBurned NUMERIC(10, 2),
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  activity_type INT NOT NULL REFERENCES activity_types(id),
+  done_at TIMESTAMP NOT NULL,
+  duration_in_minutes INT NOT NULL CHECK (duration_in_minutes >= 1),
+  calories_burned NUMERIC(10, 2),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id UUID NOT NULL
 );
 
 -- Create function to calculate calories
 CREATE OR REPLACE FUNCTION calculate_calories_burned()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.caloriesBurned := NEW.durationInMinutes * (
+    NEW.calories_burned := NEW.duration_in_minutes * (
         SELECT calories_per_minute 
-        FROM ActivityTypes 
-        WHERE id = NEW.activityType
+        FROM activity_types
+        WHERE id = NEW.activity_type
     );
     RETURN NEW;
 END;
@@ -47,8 +48,8 @@ $$ LANGUAGE plpgsql;
 
 -- Create trigger to automatically calculate calories before insert or update
 CREATE TRIGGER set_calories_burned
-    BEFORE INSERT OR UPDATE OF activityType, durationInMinutes
-    ON Activities
+    BEFORE INSERT OR UPDATE OF activity_type, duration_in_minutes
+    ON activities
     FOR EACH ROW
     EXECUTE FUNCTION calculate_calories_burned();
 
@@ -78,7 +79,7 @@ CREATE TRIGGER update_modified_time
 
 -- Insert activity types
 INSERT INTO
-  ActivityTypes (name, calories_per_minute)
+  activity_types (name, calories_per_minute)
 VALUES
   ('Walking', 4),
   ('Yoga', 4),
