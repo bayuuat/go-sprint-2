@@ -7,13 +7,18 @@ type ActivityReq struct {
 }
 
 type ActivityFilter struct {
-	Limit  int    `json:"limit"`
-	Offset int    `json:"offset"`
-	Name   string `json:"name"`
-	UserId string `json:"user_id"`
+	Limit             int    `json:"limit"`
+	Offset            int    `json:"offset"`
+	ActivityId        string `json:"activityId"`
+	ActivityType      string `json:"activityType"`
+	DoneAtFrom        string `json:"doneAtFrom"`
+	DoneAtTo          string `json:"doneAtTo"`
+	CaloriesBurnedMin int    `json:"caloriesBurnedMin"`
+	CaloriesBurnedMax int    `json:"caloriesBurnedMax"`
 }
 
 type ActivityData struct {
+	ActivityId        string  `json:"activityId"`
 	ActivityType      string  `json:"activityType"`
 	DoneAt            string  `json:"doneAt"`
 	DurationInMinutes int     `json:"durationInMinutes"`
