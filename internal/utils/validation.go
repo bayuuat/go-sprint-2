@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 )
 
 var (
@@ -27,7 +28,7 @@ func init() {
 
 	validate.RegisterValidation("accessibleuri", validateAccessibleURI)
 	validate.RegisterValidation("rfc3339", validateRFC3339)
-  validate.RegisterValidation("isodate", validateIsoDate)
+	validate.RegisterValidation("isodate", validateIsoDate)
 }
 
 func Validate[T any](data T) map[string]string {

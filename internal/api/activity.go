@@ -28,7 +28,7 @@ func NewActivity(app *fiber.App,
 
 	user.Use(middleware.JWTProtected)
 	user.Post("/", da.CreateActivity)
-	user.Get("/", da.GetActivities)
+	user.Get("/", da.GetActivitys)
 	user.Patch("/:id?", da.UpdateActivity)
 	user.Delete("/:id?", da.DeleteActivity)
 }
@@ -61,6 +61,10 @@ func (da activityApi) CreateActivity(ctx *fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
 
+	user := ctx.Locals("jwt").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["id"].(string)
+
 	var req dto.ActivityReq
 	if err := ctx.BodyParser(&req); err != nil {
 		return ctx.Status(http.StatusBadRequest).JSON(dto.NewErrorResponse("Invalid request:" + err.Error()))
@@ -75,7 +79,7 @@ func (da activityApi) CreateActivity(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(dto.NewErrorResponse("Validation error:  " + errMsg))
 	}
 
-	res, code, err := da.activityService.CreateActivity(c, req)
+	res, code, err := da.activityService.CreateActivity(c, req, userId)
 	if err != nil {
 		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
 	}
