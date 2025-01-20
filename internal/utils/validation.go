@@ -2,16 +2,15 @@ package utils
 
 import (
 	"fmt"
+	"github.com/go-playground/locales/en"
+	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
+	enTranslations "github.com/go-playground/validator/v10/translations/en"
 	"net"
 	"net/url"
 	"regexp"
 	"strings"
 	"time"
-
-	"github.com/go-playground/locales/en"
-	ut "github.com/go-playground/universal-translator"
-	"github.com/go-playground/validator/v10"
-	enTranslations "github.com/go-playground/validator/v10/translations/en"
 )
 
 var (
@@ -29,6 +28,7 @@ func init() {
 
 	validate.RegisterValidation("accessibleuri", validateAccessibleURI)
 	validate.RegisterValidation("rfc3339", validateRFC3339)
+	validate.RegisterValidation("isodate", validateIsoDate)
 }
 
 func Validate[T any](data T) map[string]string {
@@ -38,11 +38,10 @@ func Validate[T any](data T) map[string]string {
 	}
 
 	res := map[string]string{}
-	if err != nil {
-		fmt.Print(err)
-		for _, v := range err.(validator.ValidationErrors) {
-			res[v.StructField()] = v.Translate(trans)
-		}
+
+	fmt.Println(err)
+	for _, v := range err.(validator.ValidationErrors) {
+		res[v.StructField()] = v.Translate(trans)
 	}
 	return res
 }
@@ -77,7 +76,14 @@ func validateAccessibleURI(fl validator.FieldLevel) bool {
 
 }
 
+func validateIsoDate(tl validator.FieldLevel) bool {
+	ISO8601DateRegexString := "^(-?(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-(3[01]|0[1-9]|[12][0-9])(?:T|\\s)(2[0-3]|[01][0-9]):([0-5][0-9]):([0-5][0-9])?(Z)?$"
+	ISO8601DateRegex := regexp.MustCompile(ISO8601DateRegexString)
+
+	return ISO8601DateRegex.MatchString(tl.Field().String())
+}
+
 func validateRFC3339(fl validator.FieldLevel) bool {
-	_, err := time.Parse(time.RFC3339, fl.Field().String())
+	_, err := time.Parse(time.RFC3339Nano, fl.Field().String())
 	return err == nil
 }

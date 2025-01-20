@@ -28,5 +28,13 @@ type ActivityData struct {
 }
 
 type UpdateActivityReq struct {
-	Name string `json:"name" validate:"required,min=4,max=33"`
+	ActivityType      *string `json:"activityType" validate:"oneof=Walking Yoga Stretching Cycling Swimming Dancing Hiking Running HIIT JumpRope"`
+	DoneAt            *string `json:"doneAt" validate:"rfc3339"`
+	DurationInMinutes *int    `json:"durationInMinutes" validate:"min=1"`
+}
+
+type UpdateActivityDbReq struct {
+	ActivityType      int     `json:"activity_type,omitempty" validate:"omitempty,min=1,max=10"`
+	DoneAt            *string `json:"done_at" validate:"rfc3339"`
+	DurationInMinutes *int    `json:"duration_in_minutes" validate:"min=1"`
 }

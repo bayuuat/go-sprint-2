@@ -2,14 +2,15 @@ package api
 
 import (
 	"context"
-	"net/http"
-	"time"
-
+	"fmt"
 	"github.com/bayuuat/go-sprint-2/dto"
 	"github.com/bayuuat/go-sprint-2/internal/middleware"
 	"github.com/bayuuat/go-sprint-2/internal/service"
 	"github.com/bayuuat/go-sprint-2/internal/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
+	"net/http"
+	"time"
 )
 
 type activityApi struct {
@@ -48,7 +49,11 @@ func (da activityApi) GetActivitys(ctx *fiber.Ctx) error {
 		filter.Offset = 0
 	}
 
-	res, code, err := da.activityService.GetActivitysWithFilter(c, filter)
+	user := ctx.Locals("jwt").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["id"].(string)
+
+	res, code, err := da.activityService.GetActivitysWithFilter(c, filter, userId)
 	if err != nil {
 		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
 	}
@@ -59,6 +64,10 @@ func (da activityApi) GetActivitys(ctx *fiber.Ctx) error {
 func (da activityApi) CreateActivity(ctx *fiber.Ctx) error {
 	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
 	defer cancel()
+
+	user := ctx.Locals("jwt").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["id"].(string)
 
 	var req dto.ActivityReq
 	if err := ctx.BodyParser(&req); err != nil {
@@ -74,18 +83,56 @@ func (da activityApi) CreateActivity(ctx *fiber.Ctx) error {
 		return ctx.Status(http.StatusBadRequest).JSON(dto.NewErrorResponse("Validation error:  " + errMsg))
 	}
 
-	res, code, err := da.activityService.CreateActivity(c, req)
+	res, code, err := da.activityService.CreateActivity(c, req, userId)
 	if err != nil {
 		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
 	}
 
-	return ctx.Status(http.StatusCreated).JSON(res)
+	return ctx.Status(code).JSON(res)
 }
 
 func (da activityApi) UpdateActivity(ctx *fiber.Ctx) error {
-	return ctx.Status(200).JSON(fiber.Map{})
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	user := ctx.Locals("jwt").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["id"].(string)
+	id := ctx.Params("id")
+
+	var req dto.UpdateActivityReq
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.SendStatus(http.StatusBadRequest)
+	}
+
+	if err := utils.Validate(req); err != nil {
+		fmt.Println(err)
+		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err})
+	}
+
+	res, code, err := da.activityService.PatchActivity(c, req, userId, id)
+
+	if err != nil {
+		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
+	}
+
+	return ctx.Status(code).JSON(res)
 }
 
 func (da activityApi) DeleteActivity(ctx *fiber.Ctx) error {
-	return ctx.Status(200).JSON(fiber.Map{})
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	user := ctx.Locals("jwt").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["id"].(string)
+	id := ctx.Params("id")
+
+	res, code, err := da.activityService.DeleteActivity(c, userId, id)
+
+	if err != nil {
+		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
+	}
+
+	return ctx.Status(code).JSON(res)
 }

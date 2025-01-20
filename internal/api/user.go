@@ -110,7 +110,7 @@ func (a authApi) UpdateUser(ctx *fiber.Ctx) error {
 	}
 
 	if err := utils.Validate(req); err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 		return ctx.Status(http.StatusBadRequest).JSON(fiber.Map{"error": err})
 	}
 

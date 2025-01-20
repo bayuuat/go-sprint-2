@@ -40,7 +40,7 @@ func (a activityTypesRepository) FindAll(ctx context.Context) ([]domain.Activity
 }
 
 func (a activityTypesRepository) FindById(ctx context.Context, id int) (activityType domain.ActivityTypes, err error) {
-	dataset := a.db.From("activitytypes").Where(goqu.Ex{
+	dataset := a.db.From("activity_types").Where(goqu.Ex{
 		"id": id,
 	})
 

@@ -1,16 +1,14 @@
 package domain
 
-import (
-	"database/sql"
-	"time"
-)
+import "time"
 
 type Activity struct {
-	ActivityId        string       `db:"activityid"`
-	ActivityType      int          `db:"activitytype"`
-	DoneAt            time.Time    `db:"doneat"`
-	DurationInMinutes int          `db:"durationinminutes"`
-	CaloriesBurned    float64      `db:"caloriesburned"`
-	CreatedAt         sql.NullTime `db:"createdat"`
-	UpdatedAt         sql.NullTime `db:"updatedat"`
+	ActivityId        string    `db:"activity_id"`
+	ActivityType      int       `db:"activity_type"`
+	DurationInMinutes int       `db:"duration_in_minutes"`
+	DoneAt            time.Time `db:"done_at"`
+	CaloriesBurned    float64   `db:"calories_burned"`
+	CreatedAt         time.Time `db:"created_at"`
+	UpdatedAt         time.Time `db:"updated_at"`
+	UserId            string    `db:"user_id"`
 }
