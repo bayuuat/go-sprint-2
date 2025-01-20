@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,6 +14,19 @@ import (
 	"github.com/bayuuat/go-sprint-2/internal/repository"
 	"github.com/google/uuid"
 )
+
+var activityTypeMap = map[string]int{
+	"Walking":    1,
+	"Yoga":       2,
+	"Stretching": 3,
+	"Cycling":    4,
+	"Swimming":   5,
+	"Dancing":    6,
+	"Hiking":     7,
+	"Running":    8,
+	"HIIT":       9,
+	"JumpRope":   10,
+}
 
 type activityService struct {
 	cnf                     *config.Config
@@ -38,16 +52,36 @@ func NewActivity(cnf *config.Config,
 }
 
 func (ds activityService) GetActivitysWithFilter(ctx context.Context, filter dto.ActivityFilter) ([]dto.ActivityData, int, error) {
-	return []dto.ActivityData{}, http.StatusOK, nil
+	activities, err := ds.activityRepository.FindAllWithFilter(ctx, &filter)
+	if err != nil {
+		return nil, http.StatusInternalServerError, err
+	}
+
+	if len(activities) == 0 {
+		return []dto.ActivityData{}, http.StatusOK, nil
+	}
+
+	var activityData []dto.ActivityData
+	for _, v := range activities {
+		activityData = append(activityData, dto.ActivityData{
+			ActivityId:        v.ActivityId,
+			ActivityType:      strconv.Itoa(v.ActivityType),
+			DoneAt:            v.DoneAt.Format(time.RFC3339),
+			DurationInMinutes: v.DurationInMinutes,
+			CaloriesBurned:    v.CaloriesBurned,
+			CreatedAt:         v.CreatedAt.Time.Format(time.RFC3339),
+		})
+	}
+	return activityData, http.StatusOK, nil
 }
 
 func (ds *activityService) CreateActivity(ctx context.Context, req dto.ActivityReq) (dto.ActivityData, int, error) {
-	activityTypeId, err := strconv.Atoi(req.ActivityType)
-	if err != nil {
-		return dto.ActivityData{}, http.StatusBadRequest, err
+	activityTypeID, exists := activityTypeMap[req.ActivityType]
+	if !exists {
+		return dto.ActivityData{}, http.StatusBadRequest, errors.New("Not found")
 	}
 
-	activityType, err := ds.activityTypesRepository.FindById(ctx, activityTypeId)
+	activityType, err := ds.activityTypesRepository.FindById(ctx, activityTypeID)
 	if err != nil || activityType.Id == 0 {
 		return dto.ActivityData{}, http.StatusBadRequest, err
 	}
@@ -65,7 +99,7 @@ func (ds *activityService) CreateActivity(ctx context.Context, req dto.ActivityR
 
 	activity := domain.Activity{
 		ActivityId:        uuid.New().String(),
-		ActivityType:      activityTypeId,
+		ActivityType:      activityTypeID,
 		DoneAt:            doneAt,
 		DurationInMinutes: req.DurationInMinutes,
 		CreatedAt:         createdAt,
@@ -77,12 +111,17 @@ func (ds *activityService) CreateActivity(ctx context.Context, req dto.ActivityR
 		return dto.ActivityData{}, http.StatusInternalServerError, err
 	}
 
+	newActivity, err := ds.activityRepository.FindById(ctx, activity.ActivityId)
+	if err != nil && err != sql.ErrNoRows {
+		return dto.ActivityData{}, http.StatusInternalServerError, err
+	}
+
 	return dto.ActivityData{
 		ActivityId:        activity.ActivityId,
-		ActivityType:      strconv.Itoa(activity.ActivityType),
+		ActivityType:      req.ActivityType,
 		DoneAt:            activity.DoneAt.Format(time.RFC3339),
 		DurationInMinutes: activity.DurationInMinutes,
-		CaloriesBurned:    activity.CaloriesBurned,
+		CaloriesBurned:    newActivity.CaloriesBurned,
 		CreatedAt:         activity.CreatedAt.Time.Format(time.RFC3339),
 		UpdatedAt:         activity.UpdatedAt.Time.Format(time.RFC3339),
 	}, http.StatusCreated, nil

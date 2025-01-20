@@ -1,16 +1,20 @@
 package dto
 
 type ActivityReq struct {
-	ActivityType      string `json:"activityType" validate:"required,oneof=1 2 3 4 5 6 7 8 9 10"`
+	ActivityType      string `json:"activityType" validate:"required,oneof=Walking Yoga Stretching Cycling Swimming Dancing Hiking Running HIIT JumpRope"`
 	DoneAt            string `json:"doneAt" validate:"required,rfc3339"`
 	DurationInMinutes int    `json:"durationInMinutes" validate:"required,min=1"`
 }
 
 type ActivityFilter struct {
-	Limit  int    `json:"limit"`
-	Offset int    `json:"offset"`
-	Name   string `json:"name"`
-	UserId string `json:"user_id"`
+	Limit             int    `json:"limit"`
+	Offset            int    `json:"offset"`
+	ActivityId        string `json:"activityId"`
+	ActivityType      string `json:"activityType"`
+	DoneAtFrom        string `json:"doneAtFrom"`
+	DoneAtTo          string `json:"doneAtTo"`
+	CaloriesBurnedMin int    `json:"caloriesBurnedMin"`
+	CaloriesBurnedMax int    `json:"caloriesBurnedMax"`
 }
 
 type ActivityData struct {
