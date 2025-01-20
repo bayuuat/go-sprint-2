@@ -49,7 +49,11 @@ func (da activityApi) GetActivitys(ctx *fiber.Ctx) error {
 		filter.Offset = 0
 	}
 
-	res, code, err := da.activityService.GetActivitysWithFilter(c, filter)
+	user := ctx.Locals("jwt").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["id"].(string)
+
+	res, code, err := da.activityService.GetActivitysWithFilter(c, filter, userId)
 	if err != nil {
 		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
 	}
@@ -84,7 +88,7 @@ func (da activityApi) CreateActivity(ctx *fiber.Ctx) error {
 		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
 	}
 
-	return ctx.Status(http.StatusCreated).JSON(res)
+	return ctx.Status(code).JSON(res)
 }
 
 func (da activityApi) UpdateActivity(ctx *fiber.Ctx) error {
@@ -116,5 +120,19 @@ func (da activityApi) UpdateActivity(ctx *fiber.Ctx) error {
 }
 
 func (da activityApi) DeleteActivity(ctx *fiber.Ctx) error {
-	return ctx.Status(200).JSON(fiber.Map{})
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	user := ctx.Locals("jwt").(*jwt.Token)
+	claims := user.Claims.(jwt.MapClaims)
+	userId := claims["id"].(string)
+	id := ctx.Params("id")
+
+	res, code, err := da.activityService.DeleteActivity(c, userId, id)
+
+	if err != nil {
+		return ctx.Status(code).JSON(dto.ErrorResponse{Message: err.Error()})
+	}
+
+	return ctx.Status(code).JSON(res)
 }

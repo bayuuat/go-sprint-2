@@ -14,7 +14,7 @@ import (
 type ActivityRepository interface {
 	Save(ctx context.Context, activity *domain.Activity) (*domain.Activity, error)
 	Update(ctx context.Context, userId string, activity goqu.Record) error
-	FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter) ([]domain.Activity, error)
+	FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter, userId string) ([]domain.Activity, error)
 	FindById(ctx context.Context, userId, id string) (domain.Activity, error)
 	Delete(ctx context.Context, userId, id string) error
 }
@@ -30,6 +30,7 @@ func NewActivity(db *sql.DB) ActivityRepository {
 }
 
 func (d activityRepository) Save(ctx context.Context, activity *domain.Activity) (*domain.Activity, error) {
+	fmt.Println(activity, "HEYEEYYEYEYEYE")
 	executor := d.db.Insert("activities").Rows(activity).Executor()
 	_, err := executor.ExecContext(ctx)
 	return activity, err
@@ -71,7 +72,7 @@ func (d activityRepository) Delete(ctx context.Context, userId, id string) error
 	return err
 }
 
-func (d activityRepository) FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter) ([]domain.Activity, error) {
+func (d activityRepository) FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter, userId string) ([]domain.Activity, error) {
 	query := d.db.From("activities")
 
 	if filter.Limit > 0 {
@@ -82,35 +83,40 @@ func (d activityRepository) FindAllWithFilter(ctx context.Context, filter *dto.A
 	}
 
 	if filter.ActivityId != "" {
-		query = query.Where(goqu.Ex{"activityid": filter.ActivityId})
+		query = query.Where(goqu.Ex{
+			"activity_id": filter.ActivityId,
+			"user_id":     userId,
+		})
 	}
 
 	if filter.ActivityType != "" {
-		query = query.Where(goqu.Ex{"activitytype": filter.ActivityType})
+		query = query.Where(goqu.Ex{"activity_type": filter.ActivityType})
 	}
 
 	if filter.DoneAtFrom != "" {
 		if doneAtFrom, err := time.Parse(time.RFC3339, filter.DoneAtFrom); err == nil {
-			query = query.Where(goqu.C("doneat").Gte(doneAtFrom))
+			query = query.Where(goqu.C("done_at").Gte(doneAtFrom))
 		}
 	}
 
 	if filter.DoneAtTo != "" {
 		if doneAtTo, err := time.Parse(time.RFC3339, filter.DoneAtTo); err == nil {
-			query = query.Where(goqu.C("doneat").Lte(doneAtTo))
+			query = query.Where(goqu.C("done_at").Lte(doneAtTo))
 		}
 	}
 
 	if filter.CaloriesBurnedMin > 0 {
-		query = query.Where(goqu.C("caloriesburned").Gte(filter.CaloriesBurnedMin))
+		query = query.Where(goqu.C("calories_burned").Gte(filter.CaloriesBurnedMin))
 	}
 
 	if filter.CaloriesBurnedMax > 0 {
-		query = query.Where(goqu.C("caloriesburned").Lte(filter.CaloriesBurnedMax))
+		query = query.Where(goqu.C("calories_burned").Lte(filter.CaloriesBurnedMax))
 	}
 
 	query = query.Limit(uint(filter.Limit)).Offset(uint(filter.Offset))
 
+	fmt.Println("WOIIIIIIIIIIIIII")
+	fmt.Println(query.ToSQL())
 	var activities []domain.Activity
 	err := query.ScanStructsContext(ctx, &activities)
 	return activities, err

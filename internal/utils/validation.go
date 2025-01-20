@@ -84,6 +84,6 @@ func validateIsoDate(tl validator.FieldLevel) bool {
 }
 
 func validateRFC3339(fl validator.FieldLevel) bool {
-	_, err := time.Parse(time.RFC3339, fl.Field().String())
+	_, err := time.Parse(time.RFC3339Nano, fl.Field().String())
 	return err == nil
 }

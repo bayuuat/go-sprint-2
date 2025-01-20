@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"github.com/bayuuat/go-sprint-2/domain"
@@ -29,30 +28,30 @@ var activityTypeMap = map[string]int{
 }
 
 var convertToActivity = map[string]int{
-	"walking":    1,
-	"yoga":       2,
-	"stretching": 3,
-	"cycling":    4,
-	"swimming":   5,
-	"dancing":    6,
-	"hiking":     7,
-	"running":    8,
-	"hiit":       9,
-	"jumprope":   10,
+	"Walking":    1,
+	"Yoga":       2,
+	"Stretching": 3,
+	"Cycling":    4,
+	"Swimming":   5,
+	"Dancing":    6,
+	"Hiking":     7,
+	"Running":    8,
+	"HIIT":       9,
+	"JumpRope":   10,
 }
 
 var convertToActivityWord = [...]string{
 	"",
-	"walking",
-	"yoga",
-	"stretching",
-	"cycling",
-	"swimming",
-	"dancing",
-	"hiking",
-	"running",
-	"hiit",
-	"jumprope",
+	"Walking",
+	"Yoga",
+	"Stretching",
+	"Cycling",
+	"Swimming",
+	"Dancing",
+	"Hiking",
+	"Running",
+	"HIIT",
+	"JumpRope",
 }
 
 type activityService struct {
@@ -62,7 +61,7 @@ type activityService struct {
 }
 
 type ActivityService interface {
-	GetActivitysWithFilter(ctx context.Context, filter dto.ActivityFilter) ([]dto.ActivityData, int, error)
+	GetActivitysWithFilter(ctx context.Context, filter dto.ActivityFilter, userId string) ([]dto.ActivityData, int, error)
 	CreateActivity(ctx context.Context, req dto.ActivityReq, userId string) (dto.ActivityData, int, error)
 	PatchActivity(ctx context.Context, req dto.UpdateActivityReq, userId, id string) (dto.ActivityData, int, error)
 	DeleteActivity(ctx context.Context, user_id, id string) (dto.ActivityData, int, error)
@@ -78,8 +77,8 @@ func NewActivity(cnf *config.Config,
 	}
 }
 
-func (ds activityService) GetActivitysWithFilter(ctx context.Context, filter dto.ActivityFilter) ([]dto.ActivityData, int, error) {
-	activities, err := ds.activityRepository.FindAllWithFilter(ctx, &filter)
+func (ds activityService) GetActivitysWithFilter(ctx context.Context, filter dto.ActivityFilter, userId string) ([]dto.ActivityData, int, error) {
+	activities, err := ds.activityRepository.FindAllWithFilter(ctx, &filter, userId)
 	if err != nil {
 		return nil, http.StatusInternalServerError, err
 	}
@@ -93,10 +92,10 @@ func (ds activityService) GetActivitysWithFilter(ctx context.Context, filter dto
 		activityData = append(activityData, dto.ActivityData{
 			ActivityId:        v.ActivityId,
 			ActivityType:      convertToActivityWord[v.ActivityType],
-			DoneAt:            v.DoneAt.Format(time.RFC3339),
+			DoneAt:            v.DoneAt.Format(time.RFC3339Nano),
 			DurationInMinutes: v.DurationInMinutes,
 			CaloriesBurned:    v.CaloriesBurned,
-			CreatedAt:         v.CreatedAt.Format(time.RFC3339),
+			CreatedAt:         v.CreatedAt.Format(time.RFC3339Nano),
 		})
 	}
 	return activityData, http.StatusOK, nil
@@ -129,6 +128,7 @@ func (ds *activityService) CreateActivity(ctx context.Context, req dto.ActivityR
 		DurationInMinutes: req.DurationInMinutes,
 		CreatedAt:         createdAt,
 		UpdatedAt:         updatedAt,
+		UserId:            userId,
 	}
 
 	success, err := ds.activityRepository.Save(ctx, &activity)
@@ -137,22 +137,30 @@ func (ds *activityService) CreateActivity(ctx context.Context, req dto.ActivityR
 	}
 
 	newActivity, err := ds.activityRepository.FindById(ctx, userId, activity.ActivityId)
-	if err != nil && err != sql.ErrNoRows {
+	if err != nil {
 		return dto.ActivityData{}, http.StatusInternalServerError, err
 	}
 
+	if newActivity.ActivityId == "" {
+		return dto.ActivityData{}, http.StatusBadRequest, errors.New("activity_id Not found")
+	}
+
 	return dto.ActivityData{
-		ActivityId:        activity.ActivityId,
-		ActivityType:      convertToActivityWord[activity.ActivityType],
-		DoneAt:            activity.DoneAt.Format(time.RFC3339),
-		DurationInMinutes: activity.DurationInMinutes,
+		ActivityId:        newActivity.ActivityId,
+		ActivityType:      convertToActivityWord[newActivity.ActivityType],
+		DoneAt:            newActivity.DoneAt.Format(time.RFC3339Nano),
+		DurationInMinutes: newActivity.DurationInMinutes,
 		CaloriesBurned:    newActivity.CaloriesBurned,
-		CreatedAt:         activity.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:         activity.UpdatedAt.Format(time.RFC3339),
+		CreatedAt:         newActivity.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt:         newActivity.UpdatedAt.Format(time.RFC3339Nano),
 	}, http.StatusCreated, nil
 }
 
 func (ds activityService) PatchActivity(ctx context.Context, req dto.UpdateActivityReq, userId, id string) (dto.ActivityData, int, error) {
+	if id == "" {
+		return dto.ActivityData{}, http.StatusNotFound, errors.New("Not found")
+	}
+
 	activity, err := ds.activityRepository.FindById(ctx, userId, id)
 	if err != nil {
 		slog.ErrorContext(ctx, err.Error())
@@ -164,9 +172,14 @@ func (ds activityService) PatchActivity(ctx context.Context, req dto.UpdateActiv
 	}
 
 	reqDb := &dto.UpdateActivityDbReq{
-		ActivityType:      convertToActivity[req.ActivityType],
 		DoneAt:            req.DoneAt,
 		DurationInMinutes: req.DurationInMinutes,
+	}
+
+	if req.ActivityType != nil {
+		reqDb.ActivityType = convertToActivity[*req.ActivityType]
+	} else {
+		reqDb.ActivityType = 0
 	}
 
 	var activityMap map[string]interface{}
@@ -185,11 +198,11 @@ func (ds activityService) PatchActivity(ctx context.Context, req dto.UpdateActiv
 		return dto.ActivityData{
 			ActivityId:        activity.ActivityId,
 			ActivityType:      convertToActivityWord[activity.ActivityType],
-			DoneAt:            activity.DoneAt.Format(time.RFC3339),
+			DoneAt:            *req.DoneAt,
 			DurationInMinutes: activity.DurationInMinutes,
 			CaloriesBurned:    activity.CaloriesBurned,
-			CreatedAt:         activity.CreatedAt.Format(time.RFC3339),
-			UpdatedAt:         activity.UpdatedAt.Format(time.RFC3339),
+			CreatedAt:         activity.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:         activity.UpdatedAt.Format(time.RFC3339Nano),
 		}, 200, nil
 	}
 
@@ -209,15 +222,18 @@ func (ds activityService) PatchActivity(ctx context.Context, req dto.UpdateActiv
 	return dto.ActivityData{
 		ActivityId:        activity.ActivityId,
 		ActivityType:      convertToActivityWord[activity.ActivityType],
-		DoneAt:            activity.DoneAt.Format(time.RFC3339),
+		DoneAt:            activity.DoneAt.Format(time.RFC3339Nano),
 		DurationInMinutes: activity.DurationInMinutes,
 		CaloriesBurned:    activity.CaloriesBurned,
-		CreatedAt:         activity.CreatedAt.Format(time.RFC3339),
-		UpdatedAt:         activity.UpdatedAt.Format(time.RFC3339),
+		CreatedAt:         activity.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt:         activity.UpdatedAt.Format(time.RFC3339Nano),
 	}, 200, nil
 }
 
 func (ds activityService) DeleteActivity(ctx context.Context, userId, id string) (dto.ActivityData, int, error) {
+	if id == "" {
+		return dto.ActivityData{}, http.StatusNotFound, errors.New("Not found")
+	}
 	activity, err := ds.activityRepository.FindById(ctx, userId, id)
 	if err != nil {
 		slog.ErrorContext(ctx, err.Error())

@@ -1,8 +1,8 @@
 package dto
 
 type ActivityReq struct {
-	ActivityType      string `json:"activityType" validate:"required,oneof=walking yoga stretching cycling swimming dancing hiking running hiit jumprope"`
-	DoneAt            string `json:"doneAt" validate:"required,isodate"`
+	ActivityType      string `json:"activityType" validate:"required,oneof=Walking Yoga Stretching Cycling Swimming Dancing Hiking Running HIIT JumpRope"`
+	DoneAt            string `json:"doneAt" validate:"required,rfc3339"`
 	DurationInMinutes int    `json:"durationInMinutes" validate:"required,min=1"`
 }
 
@@ -28,13 +28,13 @@ type ActivityData struct {
 }
 
 type UpdateActivityReq struct {
-	ActivityType      string `json:"activityType,omitempty" validate:"omitempty,oneof=walking yoga stretching cycling swimming dancing hiking running hiit jumprope"`
-	DoneAt            string `json:"doneAt,omitempty" validate:"omitempty,isodate"`
-	DurationInMinutes int    `json:"durationInMinutes,omitempty" validate:"omitempty,min=0"`
+	ActivityType      *string `json:"activityType" validate:"oneof=Walking Yoga Stretching Cycling Swimming Dancing Hiking Running HIIT JumpRope"`
+	DoneAt            *string `json:"doneAt" validate:"rfc3339"`
+	DurationInMinutes *int    `json:"durationInMinutes" validate:"min=1"`
 }
 
 type UpdateActivityDbReq struct {
-	ActivityType      int    `json:"activity_type,omitempty" validate:"omitempty,oneof=walking yoga stretching cycling swimming dancing hiking running hiit jumprope"`
-	DoneAt            string `json:"done_at,omitempty" validate:"omitempty,isodate"`
-	DurationInMinutes int    `json:"duration_in_minutes,omitempty" validate:"omitempty,min=0"`
+	ActivityType      int     `json:"activity_type,omitempty" validate:"omitempty,min=1,max=10"`
+	DoneAt            *string `json:"done_at" validate:"rfc3339"`
+	DurationInMinutes *int    `json:"duration_in_minutes" validate:"min=1"`
 }

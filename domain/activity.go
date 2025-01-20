@@ -10,4 +10,5 @@ type Activity struct {
 	CaloriesBurned    float64   `db:"calories_burned"`
 	CreatedAt         time.Time `db:"created_at"`
 	UpdatedAt         time.Time `db:"updated_at"`
+	UserId            string    `db:"user_id"`
 }
