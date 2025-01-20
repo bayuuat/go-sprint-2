@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"log/slog"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -93,7 +92,7 @@ func (ds activityService) GetActivitysWithFilter(ctx context.Context, filter dto
 	for _, v := range activities {
 		activityData = append(activityData, dto.ActivityData{
 			ActivityId:        v.ActivityId,
-			ActivityType:      strconv.Itoa(v.ActivityType),
+			ActivityType:      convertToActivityWord[v.ActivityType],
 			DoneAt:            v.DoneAt.Format(time.RFC3339),
 			DurationInMinutes: v.DurationInMinutes,
 			CaloriesBurned:    v.CaloriesBurned,
@@ -144,7 +143,7 @@ func (ds *activityService) CreateActivity(ctx context.Context, req dto.ActivityR
 
 	return dto.ActivityData{
 		ActivityId:        activity.ActivityId,
-		ActivityType:      req.ActivityType,
+		ActivityType:      convertToActivityWord[activity.ActivityType],
 		DoneAt:            activity.DoneAt.Format(time.RFC3339),
 		DurationInMinutes: activity.DurationInMinutes,
 		CaloriesBurned:    newActivity.CaloriesBurned,
