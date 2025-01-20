@@ -217,6 +217,22 @@ func (ds activityService) PatchActivity(ctx context.Context, req dto.UpdateActiv
 	}, 200, nil
 }
 
-func (ds activityService) DeleteActivity(ctx context.Context, user_id, id string) (dto.ActivityData, int, error) {
+func (ds activityService) DeleteActivity(ctx context.Context, userId, id string) (dto.ActivityData, int, error) {
+	activity, err := ds.activityRepository.FindById(ctx, userId, id)
+	if err != nil {
+		slog.ErrorContext(ctx, err.Error())
+		return dto.ActivityData{}, http.StatusInternalServerError, err
+	}
+
+	if activity.ActivityId == "" {
+		return dto.ActivityData{}, http.StatusNotFound, domain.ErrActivityNotFound
+	}
+
+	err = ds.activityRepository.Delete(ctx, userId, id)
+	if err != nil {
+		slog.ErrorContext(ctx, err.Error())
+		return dto.ActivityData{}, http.StatusInternalServerError, err
+	}
+
 	return dto.ActivityData{}, http.StatusOK, nil
 }

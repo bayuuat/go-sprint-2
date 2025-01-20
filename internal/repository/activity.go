@@ -3,10 +3,12 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"time"
+	"fmt"
 	"github.com/bayuuat/go-sprint-2/domain"
 	"github.com/bayuuat/go-sprint-2/dto"
 	"github.com/doug-martin/goqu/v9"
+	"log"
+	"time"
 )
 
 type ActivityRepository interface {
@@ -14,8 +16,7 @@ type ActivityRepository interface {
 	Update(ctx context.Context, userId string, activity goqu.Record) error
 	FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter) ([]domain.Activity, error)
 	FindById(ctx context.Context, userId, id string) (domain.Activity, error)
-	HasEmployees(ctx context.Context, activityId string) (bool, error)
-	Delete(ctx context.Context, user_id string, id string) error
+	Delete(ctx context.Context, userId, id string) error
 }
 
 type activityRepository struct {
@@ -44,17 +45,30 @@ func (d activityRepository) Update(ctx context.Context, userId string, activity 
 func (d activityRepository) FindById(ctx context.Context, userId, id string) (activity domain.Activity, err error) {
 	dataset := d.db.From("activities").Where(goqu.Ex{
 		"activity_id": id,
+		"user_id":     userId,
 	})
 	_, err = dataset.ScanStructContext(ctx, &activity)
 	return
 }
 
-func (r *activityRepository) HasEmployees(ctx context.Context, activityId string) (bool, error) {
-	return false, nil
-}
+func (d activityRepository) Delete(ctx context.Context, userId, id string) error {
+	ds := d.db.From("activities").Where(goqu.Ex{
+		"activity_id": id,
+		"user_id":     userId,
+	})
 
-func (d activityRepository) Delete(ctx context.Context, user_id string, id string) error {
-	return nil
+	sql, _, err := ds.Delete().ToSQL()
+	if err != nil {
+		log.Println("Error generating SQL:", err)
+		return fmt.Errorf("Error generating SQL: %w", err)
+	}
+
+	_, err = d.db.Exec(sql)
+	if err != nil {
+		return fmt.Errorf("Error executing SQL: %w", err)
+	}
+
+	return err
 }
 
 func (d activityRepository) FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter) ([]domain.Activity, error) {
