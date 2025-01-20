@@ -14,7 +14,7 @@ type ActivityRepository interface {
 	Save(ctx context.Context, activity *domain.Activity) (*domain.Activity, error)
 	Update(ctx context.Context, activity *domain.Activity) error
 	FindAllWithFilter(ctx context.Context, filter *dto.ActivityFilter) ([]domain.Activity, error)
-	FindById(ctx context.Context, id string, userId string) (domain.Activity, error)
+	FindById(ctx context.Context, id string) (domain.Activity, error)
 	HasEmployees(ctx context.Context, activityId string) (bool, error)
 	Delete(ctx context.Context, user_id string, id string) error
 }
@@ -30,15 +30,21 @@ func NewActivity(db *sql.DB) ActivityRepository {
 }
 
 func (d activityRepository) Save(ctx context.Context, activity *domain.Activity) (*domain.Activity, error) {
-	return nil, nil
+	executor := d.db.Insert("activities").Rows(activity).Executor()
+	_, err := executor.ExecContext(ctx)
+	return activity, err
 }
 
 func (d activityRepository) Update(ctx context.Context, activity *domain.Activity) error {
 	return nil
 }
 
-func (d activityRepository) FindById(ctx context.Context, id, userId string) (activity domain.Activity, err error) {
-	return domain.Activity{}, nil
+func (d activityRepository) FindById(ctx context.Context, id string) (activity domain.Activity, err error) {
+	dataset := d.db.From("activities").Where(goqu.Ex{
+		"activityid": id,
+	})
+	_, err = dataset.ScanStructContext(ctx, &activity)
+	return
 }
 
 func (r *activityRepository) HasEmployees(ctx context.Context, activityId string) (bool, error) {

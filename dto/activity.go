@@ -1,7 +1,9 @@
 package dto
 
 type ActivityReq struct {
-	Name string `json:"name" validate:"required,min=4,max=33"`
+	ActivityType      string `json:"activityType" validate:"required,oneof=Walking Yoga Stretching Cycling Swimming Dancing Hiking Running HIIT JumpRope"`
+	DoneAt            string `json:"doneAt" validate:"required,rfc3339"`
+	DurationInMinutes int    `json:"durationInMinutes" validate:"required,min=1"`
 }
 
 type ActivityFilter struct {
@@ -22,6 +24,7 @@ type ActivityData struct {
 	DurationInMinutes int     `json:"durationInMinutes"`
 	CaloriesBurned    float64 `json:"caloriesBurned"`
 	CreatedAt         string  `json:"createdAt"`
+	UpdatedAt         string  `json:"updatedAt"`
 }
 
 type UpdateActivityReq struct {

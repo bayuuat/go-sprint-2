@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -27,6 +28,7 @@ func init() {
 	enTranslations.RegisterDefaultTranslations(validate, trans)
 
 	validate.RegisterValidation("accessibleuri", validateAccessibleURI)
+	validate.RegisterValidation("rfc3339", validateRFC3339)
 }
 
 func Validate[T any](data T) map[string]string {
@@ -73,4 +75,9 @@ func validateAccessibleURI(fl validator.FieldLevel) bool {
 
 	return domainRegex.MatchString(host)
 
+}
+
+func validateRFC3339(fl validator.FieldLevel) bool {
+	_, err := time.Parse(time.RFC3339, fl.Field().String())
+	return err == nil
 }
